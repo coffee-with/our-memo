@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 메모장 💌</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Serif+KR:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #fdf6ee;
+    --warm: #f5e6d3;
+    --blush: #e8c4a2;
+    --rust: #c47a4a;
+    --deep: #5c3d2e;
+    --text: #3a2618;
+    --muted: #9e7b65;
+    --check: #b85c38;
+    --shadow: rgba(92,61,46,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--cream);
+    font-family: 'Gowun Dodum', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, #fde8d4 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, #f0d9c4 0%, transparent 50%);
+  }
+
+  /* ── 비밀번호 화면 ── */
+  #pwScreen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .pw-card {
+    background: white;
+    border-radius: 28px;
+    padding: 44px 32px 36px;
+    width: 100%;
+    max-width: 320px;
+    box-shadow: 0 8px 40px var(--shadow);
+    text-align: center;
+    animation: fadeUp 0.4s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .pw-emoji { font-size: 48px; display: block; margin-bottom: 16px; }
+  .pw-title { font-family: 'Noto Serif KR', serif; font-size: 22px; color: var(--deep); font-weight: 600; margin-bottom: 6px; }
+  .pw-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
+
+  .pw-input {
+    width: 100%;
+    border: 1.5px solid var(--warm);
+    border-radius: 14px;
+    padding: 14px 18px;
+    font-family: 'Gowun Dodum', sans-serif;
+    font-size: 16px;
+    color: var(--text);
+    outline: none;
+    text-align: center;
+    transition: border-color 0.2s;
+    margin-bottom: 12px;
+    background: white;
+  }
+
+  .pw-input:focus { border-color: var(--blush); }
+  .pw-input.error { border-color: #e07070; animation: shake 0.35s ease; }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-10px); }
+    60% { transform: translateX(10px); }
+    80% { transform: translateX(-6px); }
+  }
+
+  .pw-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    background: var(--rust);
+    font-family: 'Gowun Dodum', sans-serif;
+    font-size: 15px;
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .pw-btn:hover { background: var(--deep); }
+  .pw-error { font-size: 12px; color: #e07070; margin-top: 12px; min-height: 16px; }
+
+  /* ── 메인 앱 ── */
+  #appScreen { display: none; padding-bottom: 80px; }
+
+  header { text-align: center; padding: 40px 20px 20px; }
+
+  .heart-deco {
+    font-size: 13px; color: var(--blush); letter-spacing: 8px;
+    display: block; margin-bottom: 8px; animation: pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+  h1 { font-family: 'Noto Serif KR', serif; font-size: clamp(24px, 6vw, 34px); color: var(--deep); font-weight: 600; letter-spacing: -0.5px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-top: 6px; letter-spacing: 1px; }
+
+  .divider {
+    width: 60px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--blush), transparent);
+    margin: 16px auto;
+  }
+
+  .top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    max-width: 480px; margin: 0 auto; padding: 0 16px 16px;
+  }
+
+  .sync-bar { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; transition: background 0.3s; flex-shrink: 0; }
+  .sync-dot.connected { background: #7bc67e; animation: blink 2s ease-in-out infinite; }
+  .sync-dot.connecting { background: #f0b96b; animation: blink 0.8s ease-in-out infinite; }
+  .sync-dot.error { background: #e07070; }
+
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .done-toggle {
+    display: flex; align-items: center; gap: 5px;
+    background: white; border: 1.5px solid var(--blush); border-radius: 20px;
+    padding: 6px 12px; font-size: 12px; color: var(--muted); cursor: pointer;
+    transition: all 0.2s; font-family: 'Gowun Dodum', sans-serif;
+    white-space: nowrap; box-shadow: 0 2px 8px var(--shadow);
+  }
+
+  .done-toggle:hover { border-color: var(--rust); color: var(--rust); }
+  .done-toggle.active { background: var(--warm); border-color: var(--rust); color: var(--rust); }
+
+  .container { max-width: 480px; margin: 0 auto; padding: 0 16px; }
+
+  /* ── 카테고리 카드 ── */
+  .category-card {
+    background: white; border-radius: 20px; margin-bottom: 16px;
+    overflow: hidden; box-shadow: 0 4px 20px var(--shadow), 0 1px 4px rgba(0,0,0,0.04);
+    transition: transform 0.2s ease;
+  }
+
+  .category-card:active { transform: scale(0.99); }
+
+  .category-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px 14px; cursor: pointer; user-select: none;
+  }
+
+  .category-title-wrap { display: flex; align-items: center; gap: 10px; }
+
+  .category-emoji {
+    font-size: 22px; width: 40px; height: 40px; background: var(--warm);
+    border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  .category-name { font-family: 'Noto Serif KR', serif; font-size: 16px; font-weight: 600; color: var(--deep); }
+  .category-count { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .toggle-icon { color: var(--muted); font-size: 18px; transition: transform 0.3s ease; flex-shrink: 0; }
+  .category-card.collapsed .toggle-icon { transform: rotate(-90deg); }
+  .category-card.collapsed .items-list { display: none; }
+
+  .items-list { padding: 0 20px 4px; }
+
+  /* 완료 숨기기 */
+  .hide-done .item-row.is-done { display: none; }
+  .hide-done .done-section-label { display: none; }
+
+  .done-section-label {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--muted); padding: 10px 0 4px;
+  }
+
+  .done-section-label::before, .done-section-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--warm);
+  }
+
+  /* ── 아이템 ── */
+  .item-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--warm);
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+  .item-row:last-of-type { border-bottom: none; }
+
+  .custom-checkbox {
+    width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--blush);
+    background: white; cursor: pointer; flex-shrink: 0; display: flex;
+    align-items: center; justify-content: center; transition: all 0.2s ease;
+    position: relative; margin-top: 2px;
+  }
+
+  .custom-checkbox.checked { background: var(--check); border-color: var(--check); }
+
+  .custom-checkbox.checked::after {
+    content: ''; width: 6px; height: 10px;
+    border: 2px solid white; border-top: none; border-left: none;
+    transform: rotate(45deg) translateY(-1px);
+  }
+
+  /* ── 아이템 텍스트 (표시 모드) ── */
+  .item-text {
+    flex: 1; font-size: 15px; color: var(--text); line-height: 1.5;
+    word-break: break-all; padding: 2px 0; min-height: 26px; cursor: pointer;
+  }
+
+  .item-text.done { text-decoration: line-through; color: var(--muted); opacity: 0.6; }
+
+  .item-text a {
+    color: var(--rust); text-decoration: underline;
+    font-size: 13px; word-break: break-all;
+  }
+
+  .item-text .link-icon { font-size: 12px; margin-right: 3px; }
+
+  /* ── 아이템 편집 모드 (textarea) ── */
+  .item-edit-input {
+    flex: 1;
+    border: none;
+    border-bottom: 1.5px dashed var(--blush);
+    background: transparent;
+    font-family: 'Gowun Dodum', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    padding: 2px 0;
+    outline: none;
+    resize: none;
+    line-height: 1.5;
+    min-height: 26px;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .delete-btn {
+    background: none; border: none; color: var(--blush); font-size: 20px;
+    cursor: pointer; padding: 2px 4px; border-radius: 6px; opacity: 0;
+    transition: opacity 0.2s; flex-shrink: 0; line-height: 1; margin-top: 2px;
+  }
+
+  .item-row:hover .delete-btn { opacity: 1; }
+  @media (hover: none) { .delete-btn { opacity: 0.35; } }
+
+  /* ── 항목 추가 영역 ── */
+  .add-item-row {
+    display: flex; align-items: flex-start; gap: 10px; padding: 10px 0 16px;
+  }
+
+  .add-input {
+    flex: 1; border: none; border-bottom: 1.5px dashed var(--blush);
+    background: transparent; font-family: 'Gowun Dodum', sans-serif;
+    font-size: 14px; color: var(--text); padding: 4px 2px; outline: none;
+    resize: none; line-height: 1.5; min-height: 28px; overflow: hidden;
+  }
+
+  .add-input::placeholder { color: var(--blush); }
+
+  .add-btn {
+    width: 28px; height: 28px; border-radius: 8px; background: var(--rust);
+    border: none; color: white; font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: transform 0.15s ease, background 0.15s;
+    line-height: 1; padding-bottom: 1px; margin-top: 2px;
+  }
+
+  .add-btn:hover { background: var(--deep); transform: scale(1.08); }
+
+  /* ── 카테고리 추가 버튼 ── */
+  .add-category-btn {
+    width: 100%; padding: 16px; background: transparent;
+    border: 2px dashed var(--blush); border-radius: 20px; color: var(--muted);
+    font-family: 'Gowun Dodum', sans-serif; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; transition: all 0.2s ease; margin-top: 4px;
+  }
+
+  .add-category-btn:hover { background: white; color: var(--rust); border-color: var(--rust); }
+
+  /* ── 모달 ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(60,30,10,0.35); backdrop-filter: blur(4px);
+    z-index: 100; align-items: center; justify-content: center; padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: white; border-radius: 24px; padding: 28px 24px;
+    width: 100%; max-width: 340px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes modalIn {
+    from { transform: scale(0.85) translateY(20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  .modal h3 { font-family: 'Noto Serif KR', serif; font-size: 18px; color: var(--deep); margin-bottom: 20px; text-align: center; }
+  .modal label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; margin-top: 14px; }
+
+  .modal input[type="text"] {
+    width: 100%; border: 1.5px solid var(--warm); border-radius: 10px;
+    padding: 10px 14px; font-family: 'Gowun Dodum', sans-serif;
+    font-size: 15px; color: var(--text); outline: none; transition: border-color 0.2s;
+  }
+
+  .modal input[type="text"]:focus { border-color: var(--blush); }
+
+  .emoji-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+
+  .emoji-option {
+    width: 38px; height: 38px; border-radius: 10px; background: var(--warm);
+    border: 2px solid transparent; font-size: 20px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+  }
+
+  .emoji-option.selected, .emoji-option:hover { border-color: var(--rust); background: white; transform: scale(1.1); }
+
+  .modal-buttons { display: flex; gap: 10px; margin-top: 22px; }
+
+  .btn-cancel {
+    flex: 1; padding: 12px; border-radius: 12px; border: 1.5px solid var(--warm);
+    background: white; font-family: 'Gowun Dodum', sans-serif; font-size: 14px;
+    color: var(--muted); cursor: pointer;
+  }
+
+  .btn-confirm {
+    flex: 2; padding: 12px; border-radius: 12px; border: none; background: var(--rust);
+    font-family: 'Gowun Dodum', sans-serif; font-size: 14px; color: white;
+    cursor: pointer; transition: background 0.2s;
+  }
+
+  .btn-confirm:hover { background: var(--deep); }
+
+  /* ── 토스트 ── */
+  .toast {
+    position: fixed; bottom: 30px; left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--deep); color: white; padding: 10px 20px;
+    border-radius: 20px; font-size: 13px;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 200; white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .loading-screen { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px; }
+
+  .loading-spinner {
+    width: 32px; height: 32px; border: 3px solid var(--warm);
+    border-top-color: var(--rust); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- 비밀번호 화면 -->
+<div id="pwScreen">
+  <div class="pw-card">
+    <span class="pw-emoji">💌</span>
+    <div class="pw-title">우리 메모장</div>
+    <div class="pw-subtitle">둘만의 작은 공간이에요<br>비밀번호를 입력해주세요</div>
+    <input class="pw-input" type="password" id="pwInput" placeholder="비밀번호"
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+      onkeydown="if(event.key==='Enter') checkPassword()">
+    <button class="pw-btn" onclick="checkPassword()">들어가기 →</button>
+    <div class="pw-error" id="pwError"></div>
+  </div>
+</div>
+
+<!-- 메인 앱 -->
+<div id="appScreen">
+  <header>
+    <span class="heart-deco">♡ ♡ ♡</span>
+    <h1>우리 메모장</h1>
+    <p class="subtitle">함께 쓰는 작은 공간</p>
+    <div class="divider"></div>
+  </header>
+
+  <div class="top-bar">
+    <div class="sync-bar">
+      <div class="sync-dot connecting" id="syncDot"></div>
+      <span id="syncText">연결 중...</span>
+    </div>
+    <button class="done-toggle" id="doneToggle" onclick="toggleDoneVisibility()">
+      <span id="doneToggleText">✓ 완료 항목 숨기기</span>
+    </button>
+  </div>
+
+  <div class="container">
+    <div id="mainContent">
+      <div class="loading-screen">
+        <div class="loading-spinner"></div>
+        불러오는 중...
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 카테고리 추가 모달 -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>새 카테고리 만들기</h3>
+    <label>카테고리 이름</label>
+    <input type="text" id="newCatName" placeholder="예: 여행 계획" maxlength="20">
+    <label>이모지 선택</label>
+    <div class="emoji-grid" id="emojiGrid"></div>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-confirm" onclick="addCategory()">추가하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 비밀번호 + 완료 토글 -->
+<script>
+const PASSWORD = 'richalldays';
+const PW_KEY = 'memo_auth_v1';
+const DONE_KEY = 'memo_done_visible';
+
+function checkPassword() {
+  const inputEl = document.getElementById('pwInput');
+  const input = inputEl.value;
+  const errEl = document.getElementById('pwError');
+  if (input === PASSWORD) {
+    localStorage.setItem(PW_KEY, 'true');
+    document.getElementById('pwScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'block';
+  } else {
+    errEl.textContent = '비밀번호가 틀렸어요 🥲';
+    inputEl.classList.add('error');
+    inputEl.value = '';
+    setTimeout(() => { inputEl.classList.remove('error'); errEl.textContent = ''; }, 1200);
+    inputEl.focus();
+  }
+}
+
+if (localStorage.getItem(PW_KEY) === 'true') {
+  document.getElementById('pwScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+} else {
+  setTimeout(() => document.getElementById('pwInput').focus(), 300);
+}
+
+let showDone = localStorage.getItem(DONE_KEY) !== 'false';
+
+function applyDoneVisibility() {
+  const content = document.getElementById('mainContent');
+  const btn = document.getElementById('doneToggle');
+  const txt = document.getElementById('doneToggleText');
+  if (!content) return;
+  if (showDone) {
+    content.classList.remove('hide-done');
+    btn.classList.remove('active');
+    txt.textContent = '✓ 완료 항목 숨기기';
+  } else {
+    content.classList.add('hide-done');
+    btn.classList.add('active');
+    txt.textContent = '○ 완료 항목 보이기';
+  }
+}
+
+function toggleDoneVisibility() {
+  showDone = !showDone;
+  localStorage.setItem(DONE_KEY, showDone);
+  applyDoneVisibility();
+}
+
+applyDoneVisibility();
+</script>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, push, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAD3k_pHxDed5ChFJ0Sxr3BwCs2Ae0bOa4",
+  authDomain: "our-memo-fbb85.firebaseapp.com",
+  databaseURL: "https://our-memo-fbb85-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "our-memo-fbb85",
+  storageBucket: "our-memo-fbb85.firebasestorage.app",
+  messagingSenderId: "294139692418",
+  appId: "1:294139692418:web:8c2cfd968e4cf362ee3b9b"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const notesRef = ref(db, 'notes');
+
+const EMOJIS = ['🛒','💬','✅','🏠','🌿','🎉','💊','🐾','📚','✈️','🍳','💰','🎵','💝','🌸'];
+let selectedEmoji = EMOJIS[0];
+
+function setSyncStatus(s) {
+  const dot = document.getElementById('syncDot');
+  const text = document.getElementById('syncText');
+  if (!dot) return;
+  dot.className = 'sync-dot ' + s;
+  if (s === 'connected') text.textContent = '실시간 동기화 중 ✓';
+  else if (s === 'connecting') text.textContent = '연결 중...';
+  else text.textContent = '연결 오류';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function isUrl(text) {
+  return /^https?:\/\//i.test((text || '').trim());
+}
+
+function renderItemText(text) {
+  if (!isUrl(text)) return `<span>${text}</span>`;
+  const isYoutube = /youtube\.com|youtu\.be/i.test(text);
+  const icon = isYoutube ? '▶ ' : '🔗 ';
+  return `<a href="${text.trim()}" target="_blank" rel="noopener">${icon}${text.trim()}</a>`;
+}
+
+onValue(notesRef, (snapshot) => {
+  setSyncStatus('connected');
+  let data = snapshot.val();
+  if (!data || !data.categories) {
+    const initData = { categories: {} };
+    [
+      { id: 'shopping', name: '장보기', emoji: '🛒' },
+      { id: 'talk', name: '함께 이야기 해보자', emoji: '💬' },
+      { id: 'todo', name: '해야 할 일', emoji: '✅' },
+    ].forEach(c => { initData.categories[c.id] = { name: c.name, emoji: c.emoji, items: {} }; });
+    set(notesRef, initData);
+    return;
+  }
+  render(data);
+  if (typeof applyDoneVisibility === 'function') applyDoneVisibility();
+}, () => setSyncStatus('error'));
+
+function render(data) {
+  const container = document.getElementById('mainContent');
+  if (!container) return;
+  const cats = Object.entries(data.categories || {});
+
+  let html = '';
+  cats.forEach(([catId, cat]) => {
+    const allItems = Object.entries(cat.items || {});
+    const pendingItems = allItems.filter(([,v]) => !v.done);
+    const doneItems = allItems.filter(([,v]) => v.done);
+
+    const renderItem = ([itemId, item]) => `
+      <div class="item-row ${item.done ? 'is-done' : ''}" id="row-${itemId}">
+        <div class="custom-checkbox ${item.done ? 'checked' : ''}"
+          onclick="window._check('${catId}','${itemId}',${!!item.done})"></div>
+        <div class="item-text ${item.done ? 'done' : ''}"
+          ondblclick="window._startEdit('${catId}','${itemId}',this)"
+          title="두 번 탭하면 수정">
+          ${renderItemText(item.text)}
+        </div>
+        <button class="delete-btn" onclick="window._del('${catId}','${itemId}')">×</button>
+      </div>`;
+
+    html += `
+      <div class="category-card" id="card-${catId}">
+        <div class="category-header" onclick="window._toggle('${catId}')">
+          <div class="category-title-wrap">
+            <div class="category-emoji">${cat.emoji}</div>
+            <div>
+              <div class="category-name">${cat.name}</div>
+              <div class="category-count">${allItems.length}개 항목${doneItems.length > 0 ? ` · ${doneItems.length}개 완료` : ''}</div>
+            </div>
+          </div>
+          <div class="toggle-icon">▾</div>
+        </div>
+        <div class="items-list">
+          ${pendingItems.map(renderItem).join('')}
+          ${doneItems.length > 0 ? `
+            <div class="done-section-label">완료 ${doneItems.length}개</div>
+            ${doneItems.map(renderItem).join('')}
+          ` : ''}
+          <div class="add-item-row">
+            <textarea class="add-input" id="inp-${catId}" placeholder="항목 추가... (링크도 붙여넣기 가능해요)" rows="1"
+              oninput="autoResize(this)"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window._add('${catId}')}"></textarea>
+            <button class="add-btn" onclick="window._add('${catId}')">+</button>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  html += `<button class="add-category-btn" onclick="window._openModal()">
+    <span style="font-size:18px">＋</span> 새 카테고리 추가
+  </button>`;
+
+  container.innerHTML = html;
+}
+
+// textarea 자동 높이 조절
+window.autoResize = function(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+};
+
+window._toggle = (catId) => {
+  document.getElementById('card-' + catId)?.classList.toggle('collapsed');
+};
+
+window._check = (catId, itemId, done) => {
+  update(ref(db, `notes/categories/${catId}/items/${itemId}`), { done: !done });
+};
+
+// 편집 모드: 텍스트를 textarea로 교체
+window._startEdit = (catId, itemId, el) => {
+  const currentText = el.dataset.text || el.innerText.trim();
+  const textarea = document.createElement('textarea');
+  textarea.className = 'item-edit-input';
+  textarea.value = currentText;
+  textarea.rows = 1;
+  textarea.style.height = 'auto';
+
+  textarea.onblur = () => {
+    const newText = textarea.value.trim();
+    if (newText && newText !== currentText) {
+      update(ref(db, `notes/categories/${catId}/items/${itemId}`), { text: newText });
+    }
+  };
+
+  textarea.onkeydown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); textarea.blur(); }
+    if (e.key === 'Escape') { textarea.value = currentText; textarea.blur(); }
+  };
+
+  el.innerHTML = '';
+  el.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  setTimeout(() => { textarea.style.height = textarea.scrollHeight + 'px'; }, 0);
+};
+
+window._edit = (catId, itemId, text) => {
+  const t = text.trim();
+  if (t) update(ref(db, `notes/categories/${catId}/items/${itemId}`), { text: t });
+};
+
+window._del = (catId, itemId) => {
+  remove(ref(db, `notes/categories/${catId}/items/${itemId}`));
+  showToast('삭제됐어요');
+};
+
+window._add = (catId) => {
+  const inp = document.getElementById('inp-' + catId);
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) return;
+  push(ref(db, `notes/categories/${catId}/items`), { text, done: false });
+  inp.value = '';
+  inp.style.height = 'auto';
+  showToast('추가됐어요 ✓');
+  setTimeout(() => document.getElementById('inp-' + catId)?.focus(), 150);
+};
+
+window._openModal = () => {
+  selectedEmoji = EMOJIS[0];
+  document.getElementById('emojiGrid').innerHTML = EMOJIS.map(e =>
+    `<div class="emoji-option ${e === selectedEmoji ? 'selected' : ''}" onclick="window._emoji('${e}',this)">${e}</div>`
+  ).join('');
+  document.getElementById('newCatName').value = '';
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('newCatName').focus(), 200);
+};
+
+window._emoji = (emoji, el) => {
+  selectedEmoji = emoji;
+  document.querySelectorAll('.emoji-option').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+};
+
+window.closeModal = () => document.getElementById('modal').classList.remove('open');
+
+window.addCategory = () => {
+  const name = document.getElementById('newCatName').value.trim();
+  if (!name) { document.getElementById('newCatName').focus(); return; }
+  set(ref(db, `notes/categories/cat_${Date.now()}`), { name, emoji: selectedEmoji, items: {} });
+  closeModal();
+  showToast('새 카테고리가 추가됐어요 ✓');
+};
+
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
